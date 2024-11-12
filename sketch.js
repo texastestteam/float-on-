@@ -1,12 +1,23 @@
 let boxes = [];
-let numBoxes = 5;
-let boxSize = 100;
+let numBoxes = 20;
+let boxSize = 50;
 let minSpeed = 0.5;
+let testLink = "https://www.testteam.net";
+let images = [];
+
+function preload() {
+  // Load images for the first 10 boxes, pushing null if image is missing
+  for (let i = 1; i <= 10; i++) {
+    let img = loadImage(`img/img${i}.png`, img => images.push(img), () => images.push(null));
+  }
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  imageMode(CENTER); // Set image mode to center for easier positioning and scaling
   for (let i = 0; i < numBoxes; i++) {
-    boxes.push(new Box(random(width - boxSize), random(height - boxSize), boxSize));
+    let img = i < images.length ? images[i] : null;
+    boxes.push(new Box(random(width - boxSize), random(height - boxSize), boxSize, img));
   }
 }
 
@@ -20,18 +31,27 @@ function draw() {
   }
 }
 
+function mousePressed() {
+  // Check if the first 10 boxes are clicked
+  for (let i = 0; i < 10; i++) {
+    if (boxes[i].isClicked(mouseX, mouseY)) {
+      window.open(testLink, "_blank");
+    }
+  }
+}
+
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
 class Box {
-  constructor(x, y, size) {
+  constructor(x, y, size, img) {
     this.x = x;
     this.y = y;
     this.size = size;
+    this.img = img;
     this.speedX = random(-minSpeed, minSpeed);
     this.speedY = random(-minSpeed, minSpeed);
-    this.color = color(255, random(100, 255), random(100, 255));
   }
 
   update() {
@@ -55,12 +75,8 @@ class Box {
         let dy = other.y - this.y;
         let distance = sqrt(dx * dx + dy * dy);
 
-        // Check if boxes are colliding
         if (distance < this.size) {
-          // Calculate angle of collision
           let angle = atan2(dy, dx);
-
-          // Separate boxes to prevent overlap
           let targetX = this.x + cos(angle) * this.size;
           let targetY = this.y + sin(angle) * this.size;
           let ax = (targetX - other.x) * 0.5;
@@ -71,7 +87,6 @@ class Box {
           other.x += ax;
           other.y += ay;
 
-          // Swap velocities for a simple bounce effect
           let tempSpeedX = this.speedX;
           let tempSpeedY = this.speedY;
           this.speedX = other.speedX;
@@ -79,7 +94,6 @@ class Box {
           other.speedX = tempSpeedX;
           other.speedY = tempSpeedY;
 
-          // Ensure minimum speed after bounce
           if (abs(this.speedX) < minSpeed) this.speedX = minSpeed * (this.speedX < 0 ? -1 : 1);
           if (abs(this.speedY) < minSpeed) this.speedY = minSpeed * (this.speedY < 0 ? -1 : 1);
           if (abs(other.speedX) < minSpeed) other.speedX = minSpeed * (other.speedX < 0 ? -1 : 1);
@@ -89,9 +103,19 @@ class Box {
     }
   }
 
+  isClicked(px, py) {
+    return px > this.x && px < this.x + this.size && py > this.y && py < this.y + this.size;
+  }
+
   display() {
-    fill(this.color);
-    noStroke();
-    rect(this.x, this.y, this.size, this.size);
+    if (this.img) {
+      // Display image centered and scaled to fit box size
+      image(this.img, this.x + this.size / 2, this.y + this.size / 2, this.size, this.size);
+    } else {
+      fill(255, 0, 0);
+      noStroke();
+      rect(this.x, this.y, this.size, this.size);
+    }
   }
 }
+
